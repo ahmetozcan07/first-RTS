@@ -440,6 +440,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
         if (Input.GetKeyDown(KeyCode.T))
         {
             playerAudioSource.mute = false;
+            photonView.RPC(nameof(RPC_PushToTalkOpen), RpcTarget.Others, playerAudioSource.GetComponent<PhotonView>().ViewID);
             voiceChat = PhotonNetwork.Instantiate(Path.Combine("PhotonPrefabs", "SpeakerIndicatorPrefab"),
                 RoomManager.Instance.VoiceChatIndicator.position,
                 RoomManager.Instance.VoiceChatIndicator.rotation,
@@ -452,7 +453,8 @@ public class PlayerController : MonoBehaviourPunCallbacks
         if (Input.GetKeyUp(KeyCode.T))
         {
             playerAudioSource.mute = true;
-            foreach(Transform t in RoomManager.Instance.VoiceChatIndicator)
+            photonView.RPC(nameof(RPC_PushToTalkClose), RpcTarget.Others, playerAudioSource.GetComponent<PhotonView>().ViewID);
+            foreach (Transform t in RoomManager.Instance.VoiceChatIndicator)
             {
                 if (t.GetComponent<PhotonView>().IsMine){
                     PhotonNetwork.Destroy(t.gameObject);
@@ -460,6 +462,21 @@ public class PlayerController : MonoBehaviourPunCallbacks
             }
         }
     }
+
+    [PunRPC]
+    void RPC_PushToTalkOpen(int viewID)
+    {
+        GameObject obj = PhotonView.Find(viewID).gameObject;
+        obj.GetComponent<AudioSource>().mute = false;
+    }
+
+    [PunRPC]
+    void RPC_PushToTalkClose(int viewID)
+    {
+        GameObject obj = PhotonView.Find(viewID).gameObject;
+        obj.GetComponent<AudioSource>().mute = true;
+    }
+
     void SetParentOnLocal(GameObject obj)
     {
         obj.transform.SetParent(RoomManager.Instance.VoiceChatIndicator, false);
